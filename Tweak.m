@@ -10,6 +10,29 @@ static FloatingButton *gFloatingButton = nil;
 static ArrowOverlay *gArrowOverlay = nil;
 static BOOL gEnabled = YES;
 
+@interface PassThroughWindow : UIWindow
+@end
+
+@implementation PassThroughWindow
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hit = [super hitTest:point withEvent:event];
+    // Pass through if we hit the window or the clear root view
+    if (hit == self || hit == self.rootViewController.view) return nil;
+    return hit;
+}
+@end
+
+@interface PassThroughView : UIView
+@end
+
+@implementation PassThroughView
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hit = [super hitTest:point withEvent:event];
+    if (hit == self) return nil;
+    return hit;
+}
+@end
+
 @interface LichessAssistantLoader : NSObject
 @end
 
@@ -24,14 +47,15 @@ static BOOL gEnabled = YES;
 + (void)setupOverlay {
     if (gOverlayWindow) return;
 
-    gOverlayWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    gOverlayWindow = [[PassThroughWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     gOverlayWindow.windowLevel = UIWindowLevelAlert + 1;
     gOverlayWindow.backgroundColor = [UIColor clearColor];
-    gOverlayWindow.userInteractionEnabled = YES;
     gOverlayWindow.hidden = NO;
 
     UIViewController *root = [UIViewController new];
-    root.view.backgroundColor = [UIColor clearColor];
+    PassThroughView *rootView = [[PassThroughView alloc] initWithFrame:gOverlayWindow.bounds];
+    rootView.backgroundColor = [UIColor clearColor];
+    root.view = rootView;
     gOverlayWindow.rootViewController = root;
 
     gArrowOverlay = [[ArrowOverlay alloc] initWithFrame:root.view.bounds];
