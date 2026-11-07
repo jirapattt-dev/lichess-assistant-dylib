@@ -4,12 +4,14 @@
 #import "SettingsUI.h"
 #import "ArrowOverlay.h"
 #import "EngineBridge.h"
+#import "FENScanner.h"
 
 static UIWindow *gOverlayWindow = nil;
 static FloatingButton *gFloatingButton = nil;
 static ArrowOverlay *gArrowOverlay = nil;
 static BOOL gEnabled = YES;
 static NSTimer *gTimer = nil;
+static NSString *gLastFEN = nil;
 
 @interface PassThroughWindow : UIWindow
 @end
@@ -69,11 +71,9 @@ static NSTimer *gTimer = nil;
     [EngineBridge shared];
     [SettingsUI shared].onSettingsChanged = ^{ [self refresh]; };
 
-    // Kick off an immediate search so arrows appear
     [self runSearch];
 
-    // Refresh every 2 seconds
-    gTimer = [NSTimer scheduledTimerWithTimeInterval:2.0 repeats:YES block:^(NSTimer *t) {
+    gTimer = [NSTimer scheduledTimerWithTimeInterval:1.5 repeats:YES block:^(NSTimer *t) {
         [self runSearch];
     }];
 }
@@ -84,8 +84,14 @@ static NSTimer *gTimer = nil;
         [gArrowOverlay clear];
         return;
     }
+
+    NSString *fen = [[FENScanner shared] scanForFEN];
+    if (!fen) fen = gLastFEN;
+    if (!fen) fen = @"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    gLastFEN = fen;
+
     int depth = (int)MAX(4, MIN(18, s.elo / 150));
-    [[EngineBridge shared] searchFEN:@"startpos" depth:depth multiPV:(int)s.arrowCount completion:^(NSArray<NSString *> *moves, double eval) {
+    [[EngineBridge shared] searchFEN:fen depth:depth multiPV:(int)s.arrowCount completion:^(NSArray<NSString *> *moves, double eval) {
         s.lastMoves = moves;
         s.lastEval = eval;
         [gArrowOverlay updateWithMoves:moves eval:eval];
