@@ -1,0 +1,9 @@
+Package: com.jirapattt.lichessassistant
+Name: Lichess Assistant
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: Injectable chess assistant for Lichess iOS (arrows, engine, auto-play)
+Maintainer: jirapattt-dev
+Author: jirapattt-dev
+Section: Tweaks
+Depends: mobilesubstrate
