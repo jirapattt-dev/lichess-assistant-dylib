@@ -1,0 +1,59 @@
+name: Build Dylib
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          echo "export THEOS=$HOME/theos" >> $HOME/.zshrc
+
+      - name: Install dependencies
+        run: |
+          brew install ldid
+          # Theos expects a toolchain; use system clang for arm64
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || true
+
+      - name: Build dylib
+        run: |
+          export THEOS=$HOME/theos
+          cd $GITHUB_WORKSPACE
+          # Direct clang build as fallback if Theos needs extra setup
+          mkdir -p build
+          xcrun -sdk iphoneos clang \
+            -arch arm64 \
+            -miphoneos-version-min=15.0 \
+            -fobjc-arc \
+            -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
+            -framework UIKit \
+            -framework Foundation \
+            -framework QuartzCore \
+            -dynamiclib \
+            -o build/LichessAssistant.dylib \
+            Tweak.m FloatingButton.m ArrowOverlay.m SettingsUI.m EngineBridge.m
+          ls -lh build/LichessAssistant.dylib
+
+      - name: Package
+        run: |
+          mkdir -p Payload
+          cp build/LichessAssistant.dylib Payload/
+          zip -r LichessAssistant.dylib.zip Payload/LichessAssistant.dylib
+          ls -lh LichessAssistant.dylib.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LichessAssistant-dylib
+          path: LichessAssistant.dylib.zip
+          retention-days: 7
