@@ -9,7 +9,7 @@
 @property (nonatomic, readonly) BOOL autoPlay;
 @property (nonatomic, readonly) double autoPlayDelay;
 @property (nonatomic, readonly) BOOL useMaia;
-@property (nonatomic, readonly) NSArray<NSString *> *lastMoves;
-@property (nonatomic, readonly) double lastEval;
+@property (nonatomic, strong) NSArray<NSString *> *lastMoves;
+@property (nonatomic, assign) double lastEval;
 - (void)presentFrom:(UIViewController *)vc;
 @end
