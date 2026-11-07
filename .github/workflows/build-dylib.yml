@@ -27,7 +27,7 @@ jobs:
             -framework CoreGraphics \
             -dynamiclib \
             -o build/LichessAssistant.dylib \
-            Tweak.m FloatingButton.m ArrowOverlay.m SettingsUI.m EngineBridge.m
+            Tweak.m FloatingButton.m ArrowOverlay.m SettingsUI.m EngineBridge.m FENScanner.m
           ls -lh build/LichessAssistant.dylib
 
       - name: Package
