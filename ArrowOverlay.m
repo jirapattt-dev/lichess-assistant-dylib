@@ -10,6 +10,7 @@
     if (self) {
         self.backgroundColor = [UIColor clearColor];
         self.userInteractionEnabled = NO;
+        self.opaque = NO;
     }
     return self;
 }
@@ -28,14 +29,18 @@
 - (void)drawRect:(CGRect)rect {
     if (!_moves.count) return;
 
-    // Estimate board area (center-ish, square)
-    CGFloat side = MIN(self.bounds.size.width, self.bounds.size.height) * 0.85;
-    CGFloat x = (self.bounds.size.width - side) / 2;
-    CGFloat y = (self.bounds.size.height - side) / 2 - 40;
+    CGFloat w = self.bounds.size.width;
+    CGFloat h = self.bounds.size.height;
+    // Board is typically centered, slightly above middle on phones
+    CGFloat side = MIN(w, h) * 0.92;
+    CGFloat x = (w - side) / 2.0;
+    CGFloat y = (h - side) / 2.0 - (h * 0.04);
     CGRect board = CGRectMake(x, y, side, side);
     CGFloat sq = side / 8.0;
 
     CGContextRef ctx = UIGraphicsGetCurrentContext();
+    CGContextSaveGState(ctx);
+
     for (NSUInteger i = 0; i < _moves.count && i < 3; i++) {
         NSString *uci = _moves[i];
         if (uci.length < 4) continue;
@@ -52,33 +57,40 @@
                                    board.origin.y + (7 - toRank + 0.5) * sq);
 
         UIColor *color;
+        CGFloat alpha = 0.9 - (i * 0.15);
         if (i == 0) {
-            color = (_eval >= 0) ? [UIColor colorWithRed:0.2 green:0.75 blue:0.3 alpha:0.85]
-                                 : [UIColor colorWithRed:0.85 green:0.25 blue:0.25 alpha:0.85];
+            color = (_eval >= 0)
+                ? [UIColor colorWithRed:0.15 green:0.78 blue:0.28 alpha:alpha]
+                : [UIColor colorWithRed:0.90 green:0.22 blue:0.22 alpha:alpha];
         } else {
-            color = [UIColor colorWithRed:0.3 green:0.5 blue:0.9 alpha:0.6];
+            color = [UIColor colorWithRed:0.25 green:0.48 blue:0.92 alpha:alpha * 0.75];
         }
 
+        CGFloat lineW = 8.0 - i * 1.8;
         CGContextSetStrokeColorWithColor(ctx, color.CGColor);
-        CGContextSetLineWidth(ctx, 6.0 - i * 1.5);
+        CGContextSetLineWidth(ctx, lineW);
         CGContextSetLineCap(ctx, kCGLineCapRound);
+        CGContextSetLineJoin(ctx, kCGLineJoinRound);
         CGContextMoveToPoint(ctx, from.x, from.y);
         CGContextAddLineToPoint(ctx, to.x, to.y);
         CGContextStrokePath(ctx);
 
         // Arrow head
         CGFloat angle = atan2(to.y - from.y, to.x - from.x);
-        CGFloat headLen = 14;
-        CGPoint p1 = CGPointMake(to.x - headLen * cos(angle - 0.4),
-                                 to.y - headLen * sin(angle - 0.4));
-        CGPoint p2 = CGPointMake(to.x - headLen * cos(angle + 0.4),
-                                 to.y - headLen * sin(angle + 0.4));
+        CGFloat headLen = 18.0;
+        CGPoint p1 = CGPointMake(to.x - headLen * cos(angle - 0.45),
+                                 to.y - headLen * sin(angle - 0.45));
+        CGPoint p2 = CGPointMake(to.x - headLen * cos(angle + 0.45),
+                                 to.y - headLen * sin(angle + 0.45));
+        CGContextSetLineWidth(ctx, lineW * 0.85);
         CGContextMoveToPoint(ctx, to.x, to.y);
         CGContextAddLineToPoint(ctx, p1.x, p1.y);
         CGContextMoveToPoint(ctx, to.x, to.y);
         CGContextAddLineToPoint(ctx, p2.x, p2.y);
         CGContextStrokePath(ctx);
     }
+
+    CGContextRestoreGState(ctx);
 }
 
 @end
