@@ -13,23 +13,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          echo "export THEOS=$HOME/theos" >> $HOME/.zshrc
-
-      - name: Install dependencies
-        run: |
-          brew install ldid
-          # Theos expects a toolchain; use system clang for arm64
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || true
-
       - name: Build dylib
         run: |
-          export THEOS=$HOME/theos
-          cd $GITHUB_WORKSPACE
-          # Direct clang build as fallback if Theos needs extra setup
           mkdir -p build
           xcrun -sdk iphoneos clang \
             -arch arm64 \
@@ -39,6 +24,7 @@ jobs:
             -framework UIKit \
             -framework Foundation \
             -framework QuartzCore \
+            -framework CoreGraphics \
             -dynamiclib \
             -o build/LichessAssistant.dylib \
             Tweak.m FloatingButton.m ArrowOverlay.m SettingsUI.m EngineBridge.m
