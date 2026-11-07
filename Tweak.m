@@ -9,6 +9,7 @@ static UIWindow *gOverlayWindow = nil;
 static FloatingButton *gFloatingButton = nil;
 static ArrowOverlay *gArrowOverlay = nil;
 static BOOL gEnabled = YES;
+static NSTimer *gTimer = nil;
 
 @interface PassThroughWindow : UIWindow
 @end
@@ -16,7 +17,6 @@ static BOOL gEnabled = YES;
 @implementation PassThroughWindow
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
     UIView *hit = [super hitTest:point withEvent:event];
-    // Pass through if we hit the window or the clear root view
     if (hit == self || hit == self.rootViewController.view) return nil;
     return hit;
 }
@@ -68,6 +68,28 @@ static BOOL gEnabled = YES;
 
     [EngineBridge shared];
     [SettingsUI shared].onSettingsChanged = ^{ [self refresh]; };
+
+    // Kick off an immediate search so arrows appear
+    [self runSearch];
+
+    // Refresh every 2 seconds
+    gTimer = [NSTimer scheduledTimerWithTimeInterval:2.0 repeats:YES block:^(NSTimer *t) {
+        [self runSearch];
+    }];
+}
+
++ (void)runSearch {
+    SettingsUI *s = [SettingsUI shared];
+    if (!s.enabled) {
+        [gArrowOverlay clear];
+        return;
+    }
+    int depth = (int)MAX(4, MIN(18, s.elo / 150));
+    [[EngineBridge shared] searchFEN:@"startpos" depth:depth multiPV:(int)s.arrowCount completion:^(NSArray<NSString *> *moves, double eval) {
+        s.lastMoves = moves;
+        s.lastEval = eval;
+        [gArrowOverlay updateWithMoves:moves eval:eval];
+    }];
 }
 
 + (void)buttonTapped {
